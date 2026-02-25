@@ -152,32 +152,23 @@ nearest_words("night")
 # ==========================
 #Visualization
 # ==========================
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-#from sklearn.manifold import TSNE  # Optional alternative
+import matplotlib.pyplot as plt
 
-# Take a subset of the vocab for clearer visualization
-subset_size = 300
-words_subset = vocab[:subset_size]
-vectors_subset = np.array([embeddings[word_to_id[w]] for w in words_subset])
+top_words = [w for w, _ in word_counts.most_common(200)]
+indices = [word_to_id[w] for w in top_words]
+emb_to_plot = W_in[indices]
 
-# ---------- Reduce to 2D ----------
 pca = PCA(n_components=2)
-vecs_2d = pca.fit_transform(vectors_subset)
+coords = pca.fit_transform(emb_to_plot)
 
-# Optional: TSNE can capture nonlinear relationships but is slower
-# tsne = TSNE(n_components=2, perplexity=30, n_iter=500)
-# vecs_2d = tsne.fit_transform(vectors_subset)
+plt.figure(figsize=(14,10))
+plt.scatter(coords[:,0], coords[:,1])
 
-# ---------- Plot ----------
-plt.figure(figsize=(12, 8))
-plt.scatter(vecs_2d[:, 0], vecs_2d[:, 1], s=10, alpha=0.7)
+for i, w in enumerate(top_words):
+    plt.text(coords[i,0], coords[i,1], w, fontsize=9)
 
-# Annotate words (optional)
-for i, word in enumerate(words_subset):
-    plt.text(vecs_2d[i, 0]+0.01, vecs_2d[i, 1]+0.01, word, fontsize=9)
-
-plt.title("Word Embeddings Visualized (PCA 2D)")
+plt.title("Top 200 Word Embeddings Visualized (PCA 2D)")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
 plt.show()
