@@ -111,3 +111,73 @@ for step, (center_id, context_id) in enumerate(pairs[:num_steps]):
         avg_loss = batch_loss / batch_size
         print(f"Step {step+1}, Avg Loss: {avg_loss:.4f}")
         batch_loss = 0
+
+# ==========================
+#Finding Similarity
+# ==========================
+import numpy as np
+
+# Choose which embedding to use for similarity: W_in or average of W_in & W_out
+embeddings = W_in  # Using input embeddings
+
+def cosine_similarity(vec1, vec2):
+    """Compute cosine similarity between two vectors."""
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2) + 1e-8)
+
+def nearest_words(word, top_k=5):
+    """Return top_k nearest words to the given word."""
+    if word not in word_to_id:
+        print(f"'{word}' not in vocabulary!")
+        return
+    
+    word_id = word_to_id[word]
+    word_vec = embeddings[word_id]
+    
+    sims = []
+    for i in range(len(embeddings)):
+        if i == word_id:
+            continue
+        sim = cosine_similarity(word_vec, embeddings[i])
+        sims.append((id_to_word[i], sim))
+    
+    sims.sort(key=lambda x: x[1], reverse=True)
+    print(f"Nearest words to '{word}':")
+    for w, s in sims[:top_k]:
+        print(f"  {w} (cos={s:.3f})")
+
+# Example usage:
+nearest_words("war")
+nearest_words("guns")
+nearest_words("night")
+# ==========================
+#Visualization
+# ==========================
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+#from sklearn.manifold import TSNE  # Optional alternative
+
+# Take a subset of the vocab for clearer visualization
+subset_size = 300
+words_subset = vocab[:subset_size]
+vectors_subset = np.array([embeddings[word_to_id[w]] for w in words_subset])
+
+# ---------- Reduce to 2D ----------
+pca = PCA(n_components=2)
+vecs_2d = pca.fit_transform(vectors_subset)
+
+# Optional: TSNE can capture nonlinear relationships but is slower
+# tsne = TSNE(n_components=2, perplexity=30, n_iter=500)
+# vecs_2d = tsne.fit_transform(vectors_subset)
+
+# ---------- Plot ----------
+plt.figure(figsize=(12, 8))
+plt.scatter(vecs_2d[:, 0], vecs_2d[:, 1], s=10, alpha=0.7)
+
+# Annotate words (optional)
+for i, word in enumerate(words_subset):
+    plt.text(vecs_2d[i, 0]+0.01, vecs_2d[i, 1]+0.01, word, fontsize=9)
+
+plt.title("Word Embeddings Visualized (PCA 2D)")
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.show()
